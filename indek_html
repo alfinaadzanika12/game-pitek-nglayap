@@ -3,260 +3,297 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Game Pitek Nglayap</title>
+    <title>Pitek Nglayap - Single Web Game</title>
     <style>
-        /* ==================== 1. STYLE / CSS ==================== */
         * {
-            box-sizing: border-box;
             margin: 0;
             padding: 0;
+            box-sizing: border-box;
         }
-
         body {
-            background-color: #2c3e50;
-            font-family: 'Arial', sans-serif;
+            background: #2c3e50;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             display: flex;
             flex-direction: column;
-            justify-content: center;
             align-items: center;
-            height: 100vh;
+            justify-content: center;
+            min-height: 100vh;
             overflow: hidden;
+            color: white;
         }
-
         h1 {
-            color: #f1c40f;
             margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            font-size: 28px;
+            text-shadow: 2px 2px #000;
         }
-
         p {
-            color: #fff;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
             font-size: 14px;
+            color: #bdc3c7;
         }
-
-        /* Area Arena Game */
-        #game-box {
-            width: 600px;
-            height: 250px;
-            background: linear-gradient(to bottom, #87CEEB, #e0f7fa); /* Langit */
-            border: 4px solid #fff;
-            border-bottom: 15px solid #8B4513; /* Tanah Jawa (Cokelat) */
-            border-radius: 8px;
+        #gameContainer {
             position: relative;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border-radius: 8px;
             overflow: hidden;
-            box-shadow: 0px 10px 20px rgba(0,0,0,0.3);
         }
-
-        /* Papan Skor */
-        #skor-box {
-            position: absolute;
-            top: 15px;
-            left: 15px;
-            background-color: rgba(0, 0, 0, 0.6);
-            color: #fff;
-            padding: 5px 15px;
-            border-radius: 20px;
-            font-size: 16px;
-            font-weight: bold;
-            z-index: 10;
+        canvas {
+            background: linear-gradient(to bottom, #87CEEB, #E0F6FF);
+            display: block;
         }
-
-        /* Karakter Pitek (Ayam Jago) */
-        #pitek {
-            width: 50px;
-            height: 50px;
-            font-size: 40px;
-            position: absolute;
-            bottom: 0px;
-            left: 50px;
-            transition: transform 0.1s;
-            z-index: 5;
-        }
-
-        /* Animasi Lompat Pitek */
-        .lompat-animasi {
-            animation: lompatAyam 0.5s ease-out;
-        }
-
-        @keyframes lompatAyam {
-            0% { bottom: 0px; }
-            50% { bottom: 130px; } /* Titik tertinggi lompatan */
-            100% { bottom: 0px; }
-        }
-
-        /* Rintangan (Sapu Emak / Wajan) */
-        #rintangan {
-            width: 40px;
-            height: 40px;
-            font-size: 32px;
-            position: absolute;
-            bottom: 0px;
-            right: -40px;
-        }
-
-        /* Layar Game Over */
-        #game-over-screen {
-            display: none;
+        .ui-layer {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.75);
+            display: flex;
             flex-direction: column;
-            justify-content: center;
             align-items: center;
-            z-index: 20;
-            color: white;
-            text-align: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.6);
+            transition: opacity 0.3s ease;
         }
-
-        #game-over-screen h2 {
-            color: #e74c3c;
-            font-size: 32px;
-            margin-bottom: 10px;
+        .hidden {
+            display: none !important;
         }
-
-        #btn-restart {
-            margin-top: 15px;
-            padding: 10px 20px;
-            font-size: 16px;
-            font-weight: bold;
-            background-color: #2ecc71;
+        .btn {
+            background: #e67e22;
             color: white;
             border: none;
-            border-radius: 5px;
+            padding: 12px 30px;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 25px;
             cursor: pointer;
-            transition: 0.2s;
+            box-shadow: 0 5px #d35400;
+            margin-top: 15px;
         }
-
-        #btn-restart:hover {
-            background-color: #27ae60;
-            transform: scale(1.05);
+        .btn:active {
+            box-shadow: 0 2px #d35400;
+            transform: translateY(3px);
+        }
+        .game-over-text {
+            color: #e74c3c;
+            font-size: 36px;
+            font-weight: bold;
+            text-shadow: 2px 2px #000;
         }
     </style>
 </head>
 <body>
 
-    <h1>PITEK NGLAYAP</h1>
-    <p>Petunjuk: Tekan <b>TOMBOL SPASI</b> atau <b>TAP LAYAR</b> untuk melompat!</p>
+    <h1>🐔 PITEK NGLAYAP 🐔</h1>
+    <p>Tekan <strong>SPASI</strong> atau <strong>TAP LAYAR</strong> untuk melompat!</p>
 
-    <!-- Kontainer Utama Game -->
-    <div id="game-box">
-        <div id="skor-box">Skor Nglayap: <span id="skor">0</span> m</div>
+    <div id="gameContainer">
+        <canvas id="gameCanvas" width="800" height="400"></canvas>
         
-        <!-- Emoji Ayam Jago -->
-        <div id="pitek">🐔</div>
-        
-        <!-- Emoji Rintangan (Bisa diganti ganti lewat JS) -->
-        <div id="rintangan">🪵</div>
-
-        <!-- Pop up Game Over -->
-        <div id="game-over-screen">
-            <h2>WADUH, PITEKE UCUL! 🐔💥</h2>
-            <p>Ayammu ketabrak rintangan saat keluyuran.</p>
-            <p>Jarak Terakhir: <span id="skor-akhir">0</span> meter</p>
-            <button id="btn-restart" onclick="mulaiGame()">Balapan Meneh (Main Lagi)</button>
+        <div id="menuOverlay" class="ui-layer">
+            <h2 id="menuTitle" style="font-size: 32px; text-shadow: 2px 2px #000;">Piteknya Siap Nglayap!</h2>
+            <p id="menuSub" style="margin-top: 5px;">Jangan sampai ketangkap Emak atau nabrak batu kampung.</p>
+            <button class="btn" id="startBtn">Mulai Nglayap</button>
         </div>
     </div>
 
-    <!-- ==================== 2. LOGIKA / JAVASCRIPT ==================== -->
-    <script>
-        const pitek = document.getElementById("pitek");
-        const rintangan = document.getElementById("rintangan");
-        const skorElemen = document.getElementById("skor");
-        const skorAkhirElemen = document.getElementById("skor-akhir");
-        const gameOverScreen = document.getElementById("game-over-screen");
-        const gameBox = document.getElementById("game-box");
+<script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+    const menuOverlay = document.getElementById("menuOverlay");
+    const menuTitle = document.getElementById("menuTitle");
+    const menuSub = document.getElementById("menuSub");
+    const startBtn = document.getElementById("startBtn");
 
-        // Daftar rintangan khas kampung (Emoji)
-        const daftarRintangan = ["🪵", "🧹", "🪨", "🛵", "🐱"];
+    // Game Variables
+    let gameState = "START"; // START, PLAYING, GAMEOVER
+    let score = 0;
+    let highScore = localStorage.getItem("pitekHighScore") || 0;
 
-        let skor = 0;
-        let gameAktif = true;
-        let rintanganX = 600; 
-        let kecepatanRintangan = 5; // Kecepatan awal rintangan berjalan
-
-        // 1. FUNGSI LOMPAT
-        function lompat() {
-            if (!gameAktif) return;
+    // Physics
+    const gravity = 0.6;
+    
+    // Objek Pitek (Ayam)
+    const pitek = {
+        x: 100,
+        y: 200,
+        width: 40,
+        height: 40,
+        velocity: 0,
+        jumpForce: -12,
+        groundY: canvas.height - 90, // batas tanah
+        draw() {
+            // Badan Ayam (Oranye)
+            ctx.fillStyle = "#ff9f43";
+            ctx.fillRect(this.x, this.y, this.width, this.height);
             
-            // Supaya tidak bisa double jump saat masih di udara
-            if (!pitek.classList.contains("lompat-animasi")) {
-                pitek.classList.add("lompat-animasi");
-                
-                // Hapus class animasi setelah 500ms (durasi animasi selesai)
-                setTimeout(() => {
-                    pitek.classList.remove("lompat-animasi");
-                }, 500);
+            // Jengger (Merah)
+            ctx.fillStyle = "#ff4d4d";
+            ctx.fillRect(this.x + 25, this.y - 10, 12, 10);
+            
+            // Paruh (Kuning)
+            ctx.fillStyle = "#feca57";
+            ctx.fillRect(this.x + 40, this.y + 10, 8, 8);
+            
+            // Mata
+            ctx.fillStyle = "#000000";
+            ctx.fillRect(this.x + 30, this.y + 8, 4, 4);
+        },
+        update() {
+            this.velocity += gravity;
+            this.y += this.velocity;
+
+            // Batasi agar tidak menembus tanah
+            if (this.y >= this.groundY) {
+                this.y = this.groundY;
+                this.velocity = 0;
+            }
+        },
+        jump() {
+            if (this.y === this.groundY) {
+                this.velocity = this.jumpForce;
             }
         }
+    };
 
-        // Event listener untuk Keyboard (Spasi) dan Touch/Klik Layar
-        document.addEventListener("keydown", function(e) {
-            if (e.code === "Space") {
-                lompat();
-            }
+    // Objek Rintangan (Batu / Sapu Emak)
+    let obstacles = [];
+    let obstacleTimer = 0;
+    let gameSpeed = 6;
+
+    function spawnObstacle() {
+        let type = Math.random() > 0.4 ? "batu" : "sapu";
+        let height = type === "batu" ? Math.random() * 30 + 30 : 30; // tinggi bervariasi
+        let yPos = type === "batu" ? canvas.height - 50 - height : canvas.height - 150; // sapu melayang
+
+        obstacles.push({
+            x: canvas.width,
+            y: yPos,
+            width: 30,
+            height: height,
+            type: type,
+            passed: false
         });
-        gameBox.addEventListener("click", lompat);
+    }
 
-        // 2. LOOP GAME UTAMA (Berjalan setiap 20 milidetik)
-        function gameLoop() {
-            if (!gameAktif) return;
+    // Reset Game
+    function resetGame() {
+        score = 0;
+        gameSpeed = 6;
+        obstacles = [];
+        pitek.y = pitek.groundY;
+        pitek.velocity = 0;
+        obstacleTimer = 0;
+    }
 
-            // Jalankan Rintangan dari kanan ke kiri
-            rintanganX -= kecepatanRintangan;
-            if (rintanganX < -40) {
-                // Jika rintangan lewat layar kiri, reset ke kanan lagi
-                rintanganX = 600;
-                // Acak emoji rintangan baru biar seru
-                const indexAcak = Math.floor(Math.random() * daftarRintangan.length);
-                rintangan.innerText = daftarRintangan[indexAcak];
-                
-                // Tingkatkan kecepatan perlahan biar makin menantang
-                kecepatanRintangan += 0.3;
+    // Input Handler (Spasi & Klik/Sentuh)
+    window.addEventListener("keydown", (e) => {
+        if (e.code === "Space") {
+            if (gameState === "PLAYING") pitek.jump();
+            else if (gameState === "GAMEOVER" || gameState === "START") handleButtonClick();
+        }
+    });
+
+    canvas.addEventListener("touchstart", (e) => {
+        e.preventDefault();
+        if (gameState === "PLAYING") pitek.jump();
+    });
+    
+    canvas.addEventListener("mousedown", () => {
+        if (gameState === "PLAYING") pitek.jump();
+    });
+
+    function handleButtonClick() {
+        resetGame();
+        gameState = "PLAYING";
+        menuOverlay.classList.add("hidden");
+    }
+    startBtn.addEventListener("click", handleButtonClick);
+
+    // Loop Utama Game
+    function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // 1. Gambar Tanah & Rumput Kampung
+        ctx.fillStyle = "#2ed573"; // Rumput
+        ctx.fillRect(0, canvas.height - 50, canvas.width, 50);
+        ctx.fillStyle = "#ffa502"; // Jalan tanah bawah rumput
+        ctx.fillRect(0, canvas.height - 15, canvas.width, 15);
+
+        if (gameState === "PLAYING") {
+            // Update & Gambar Pitek
+            pitek.update();
+            pitek.draw();
+
+            // Handle Rintangan
+            obstacleTimer++;
+            if (obstacleTimer % 90 === 0) { // Spawn tiap beberapa detik sekali
+                spawnObstacle();
             }
-            rintangan.style.left = rintanganX + "px";
 
-            // Hitung Skor (Jarak meter)
-            skor += 0.1;
-            skorElemen.innerText = Math.floor(skor);
+            // Atur tingkat kesulitan berdasarkan skor
+            gameSpeed = 6 + Math.floor(score / 50);
 
-            // Cek Deteksi Tabrakan (Collision Detection)
-            let pitekY = parseInt(window.getComputedStyle(pitek).getPropertyValue("bottom"));
-            
-            // Koordinat ketat tabrakan
-            if (rintanganX > 50 && rintanganX < 90 && pitekY <= 40) {
-                // Jika koordinat X rintangan menabrak X pitek, DAN pitek sedang tidak melompat tinggi
-                mati();
+            for (let i = obstacles.length - 1; i >= 0; i--) {
+                let obs = obstacles[i];
+                obs.x -= gameSpeed;
+
+                // Warna rintangan
+                if (obs.type === "batu") {
+                    ctx.fillStyle = "#747d8c"; // Batu Abu-abu
+                } else {
+                    ctx.fillStyle = "#d63031"; // Sapu Emak Merah Marah
+                }
+                ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+
+                // Hitung Skor jika lolos
+                if (!obs.passed && obs.x + obs.width < pitek.x) {
+                    score += 10;
+                    obs.passed = true;
+                    if (score > highScore) {
+                        highScore = score;
+                        localStorage.setItem("pitekHighScore", highScore);
+                    }
+                }
+
+                // Cek Tabrakan (AABB Collision)
+                if (
+                    pitek.x < obs.x + obs.width &&
+                    pitek.x + pitek.width > obs.x &&
+                    pitek.y < obs.y + obs.height &&
+                    pitek.y + pitek.height > obs.y
+                ) {
+                    // Pitek Menabrak! Game Over
+                    gameState = "GAMEOVER";
+                    menuTitle.innerHTML = "<span class='game-over-text'>PITEK KETANGKEP EMAL!</span>";
+                    menuSub.innerHTML = `Skor Kamu: <strong>${score}</strong> | Rekor Terbaik: <strong>${highScore}</strong>`;
+                    startBtn.innerText = "Nglayap Lagi";
+                    menuOverlay.classList.remove("hidden");
+                }
+
+                // Hapus rintangan yang keluar layar
+                if (obs.x + obs.width < 0) {
+                    obstacles.splice(i, 1);
+                }
             }
 
-            requestAnimationFrame(gameLoop);
+            // Tampilkan Skor Real-time di Pojok Kiri Atas
+            ctx.fillStyle = "#000000";
+            ctx.font = "bold 20px Arial";
+            ctx.fillText(`Skor: ${score}`, 20, 35);
+            ctx.font = "16px Arial";
+            ctx.fillText(`Rekor: ${highScore}`, 20, 60);
+
+        } else {
+            // Jika sedang tidak main (Menu awal/game over), pitek tetap digambar statis
+            pitek.draw();
         }
 
-        // 3. FUNGSI GAME OVER
-        function mati() {
-            gameAktif = false;
-            skorAkhirElemen.innerText = Math.floor(skor);
-            gameOverScreen.style.display = "flex";
-        }
+        requestAnimationFrame(animate);
+    }
 
-        // 4. FUNGSI RESTART / MULAI AWAL
-        function mulaiGame() {
-            skor = 0;
-            rintanganX = 600;
-            kecepatanRintangan = 6;
-            gameAktif = true;
-            gameOverScreen.style.display = "none";
-            rintangan.innerText = "🪵";
-            
-            // Jalankan loop game
-            gameLoop();
-        }
+    // Jalankan animasi pertama kali
+    animate();
+</script>
 
-        // Jalankan game otomatis saat file dibuka
-        mulaiGame();
-    </script>
 </body>
 </html>
