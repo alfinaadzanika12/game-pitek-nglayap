@@ -10,6 +10,7 @@
             padding: 0;
             background-color: #222;
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
             height: 100vh;
@@ -19,8 +20,8 @@
         }
         canvas {
             border: 4px solid #fff;
-            background-color: #87CEEB; /* Warna langit */
             box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+            transition: background-color 1s ease; /* Transisi halus saat ganti warna langit */
         }
         #info {
             position: absolute;
@@ -29,6 +30,7 @@
             width: 100%;
             font-size: 16px;
             pointer-events: none;
+            text-shadow: 1px 1px 2px #000;
         }
     </style>
 </head>
@@ -44,6 +46,11 @@
         // Status Game
         let score = 0;
         let gameOver = false;
+        
+        // Sistem Level
+        let currentLevel = 1;
+        let levelDescription = "Halaman Rumah: Nyantai dolo.";
+        let skyColor = "#87CEEB";
 
         // Konfigurasi Pitek (Ayam)
         const pitek = {
@@ -118,17 +125,37 @@
                 if (this.x < -this.width) {
                     this.x = canvas.width + Math.random() * 300 + 100;
                     score++;
-                    // Meningkatkan kecepatan perlahan agar makin menantang
-                    this.speed += 0.2;
+                    // Kecepatan bertambah sedikit setiap berhasil melewati rintangan
+                    this.speed += 0.3;
                 }
             }
         };
 
-        // Lingkungan (Tanah & Awan)
+        // Fungsi Update Logika Level & Mekanik Tingkat Kesulitan
+        function updateLevel() {
+            if (score <= 5) {
+                currentLevel = 1;
+                levelDescription = "Level 1 - Halaman Rumah: Emak baru manasin motor.";
+                skyColor = "#87CEEB"; // Biru cerah asli
+            } else if (score > 5 && score <= 15) {
+                currentLevel = 2;
+                levelDescription = "Level 2 - Gang Kampung: Awas jalanan makin sempit!";
+                skyColor = "#E67E22"; // Oranye sore hari
+            } else {
+                currentLevel = 3;
+                levelDescription = "Level 3 - Jalan Raya Utama: MODE BRUTAL! Emak sein kiri belok kanan!";
+                skyColor = "#34495E"; // Gelap/Malam hari
+            }
+            // Terapkan warna langit ke elemen style canvas secara berkala
+            canvas.style.backgroundColor = skyColor;
+        }
+
+        // Lingkungan (Tanah)
         function drawEnvironment() {
-            // Tanah
+            // Tanah rumput atas
             ctx.fillStyle = "#4CAF50";
             ctx.fillRect(0, 350, canvas.width, 50);
+            // Tanah cokelat bawah
             ctx.fillStyle = "#8D6E63";
             ctx.fillRect(0, 365, canvas.width, 35);
         }
@@ -145,11 +172,17 @@
             }
         }
 
-        // Tampilkan Skor dan Tulisan Game Over
+        // Tampilkan Skor, Level, dan Tulisan Game Over
         function drawUI() {
+            // UI Status Game
             ctx.fillStyle = "#000000";
-            ctx.font = "20px Arial";
+            ctx.font = "bold 18px Arial";
+            ctx.textAlign = "left";
             ctx.fillText(`Jarak Nglayap: ${score} meter`, 20, 40);
+            
+            // Teks Deskripsi Level saat ini
+            ctx.font = "italic 16px Arial";
+            ctx.fillText(levelDescription, 20, 65);
 
             if (gameOver) {
                 ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
@@ -161,7 +194,8 @@
                 ctx.fillText("PITEK KETABRAK EMAK MATIC!", canvas.width / 2, canvas.height / 2 - 20);
                 
                 ctx.font = "20px Arial";
-                ctx.fillText("Tekan SPASI atau KLIK untuk Main Lagi", canvas.width / 2, canvas.height / 2 + 30);
+                ctx.fillText(`Kamu bertahan di ${levelDescription.split(':')[0]}`, canvas.width / 2, canvas.height / 2 + 20);
+                ctx.fillText("Tekan SPASI, KLIK, atau TAP untuk Main Lagi", canvas.width / 2, canvas.height / 2 + 60);
             }
         }
 
@@ -173,6 +207,7 @@
             pitek.velocity = 0;
             emakMatic.x = canvas.width + 100;
             emakMatic.speed = 6;
+            updateLevel();
         }
 
         // Game Loop Utama
@@ -184,6 +219,7 @@
             if (!gameOver) {
                 pitek.update();
                 emakMatic.update();
+                updateLevel(); // Cek status kenaikan level
                 checkCollision();
             }
 
@@ -221,7 +257,8 @@
             }
         });
 
-        // Mulai Game
+        // Mulai Game pertama kali
+        resetGame();
         gameLoop();
     </script>
 </body>
