@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Pitek Nglayap</title>
+    <style>
+        /* ==================== 1. STYLE / CSS ==================== */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: #2c3e50;
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        h1 {
+            color: #f1c40f;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        p {
+            color: #fff;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        /* Area Arena Game */
+        #game-box {
+            width: 600px;
+            height: 250px;
+            background: linear-gradient(to bottom, #87CEEB, #e0f7fa); /* Langit */
+            border: 4px solid #fff;
+            border-bottom: 15px solid #8B4513; /* Tanah Jawa (Cokelat) */
+            border-radius: 8px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0px 10px 20px rgba(0,0,0,0.3);
+        }
+
+        /* Papan Skor */
+        #skor-box {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background-color: rgba(0, 0, 0, 0.6);
+            color: #fff;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 16px;
+            font-weight: bold;
+            z-index: 10;
+        }
+
+        /* Karakter Pitek (Ayam Jago) */
+        #pitek {
+            width: 50px;
+            height: 50px;
+            font-size: 40px;
+            position: absolute;
+            bottom: 0px;
+            left: 50px;
+            transition: transform 0.1s;
+            z-index: 5;
+        }
+
+        /* Animasi Lompat Pitek */
+        .lompat-animasi {
+            animation: lompatAyam 0.5s ease-out;
+        }
+
+        @keyframes lompatAyam {
+            0% { bottom: 0px; }
+            50% { bottom: 130px; } /* Titik tertinggi lompatan */
+            100% { bottom: 0px; }
+        }
+
+        /* Rintangan (Sapu Emak / Wajan) */
+        #rintangan {
+            width: 40px;
+            height: 40px;
+            font-size: 32px;
+            position: absolute;
+            bottom: 0px;
+            right: -40px;
+        }
+
+        /* Layar Game Over */
+        #game-over-screen {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.75);
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 20;
+            color: white;
+            text-align: center;
+        }
+
+        #game-over-screen h2 {
+            color: #e74c3c;
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        #btn-restart {
+            margin-top: 15px;
+            padding: 10px 20px;
+            font-size: 16px;
+            font-weight: bold;
+            background-color: #2ecc71;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        #btn-restart:hover {
+            background-color: #27ae60;
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body>
+
+    <h1>PITEK NGLAYAP</h1>
+    <p>Petunjuk: Tekan <b>TOMBOL SPASI</b> atau <b>TAP LAYAR</b> untuk melompat!</p>
+
+    <!-- Kontainer Utama Game -->
+    <div id="game-box">
+        <div id="skor-box">Skor Nglayap: <span id="skor">0</span> m</div>
+        
+        <!-- Emoji Ayam Jago -->
+        <div id="pitek">🐔</div>
+        
+        <!-- Emoji Rintangan (Bisa diganti ganti lewat JS) -->
+        <div id="rintangan">🪵</div>
+
+        <!-- Pop up Game Over -->
+        <div id="game-over-screen">
+            <h2>WADUH, PITEKE UCUL! 🐔💥</h2>
+            <p>Ayammu ketabrak rintangan saat keluyuran.</p>
+            <p>Jarak Terakhir: <span id="skor-akhir">0</span> meter</p>
+            <button id="btn-restart" onclick="mulaiGame()">Balapan Meneh (Main Lagi)</button>
+        </div>
+    </div>
+
+    <!-- ==================== 2. LOGIKA / JAVASCRIPT ==================== -->
+    <script>
+        const pitek = document.getElementById("pitek");
+        const rintangan = document.getElementById("rintangan");
+        const skorElemen = document.getElementById("skor");
+        const skorAkhirElemen = document.getElementById("skor-akhir");
+        const gameOverScreen = document.getElementById("game-over-screen");
+        const gameBox = document.getElementById("game-box");
+
+        // Daftar rintangan khas kampung (Emoji)
+        const daftarRintangan = ["🪵", "🧹", "🪨", "🛵", "🐱"];
+
+        let skor = 0;
+        let gameAktif = true;
+        let rintanganX = 600; 
+        let kecepatanRintangan = 5; // Kecepatan awal rintangan berjalan
+
+        // 1. FUNGSI LOMPAT
+        function lompat() {
+            if (!gameAktif) return;
+            
+            // Supaya tidak bisa double jump saat masih di udara
+            if (!pitek.classList.contains("lompat-animasi")) {
+                pitek.classList.add("lompat-animasi");
+                
+                // Hapus class animasi setelah 500ms (durasi animasi selesai)
+                setTimeout(() => {
+                    pitek.classList.remove("lompat-animasi");
+                }, 500);
+            }
+        }
+
+        // Event listener untuk Keyboard (Spasi) dan Touch/Klik Layar
+        document.addEventListener("keydown", function(e) {
+            if (e.code === "Space") {
+                lompat();
+            }
+        });
+        gameBox.addEventListener("click", lompat);
+
+        // 2. LOOP GAME UTAMA (Berjalan setiap 20 milidetik)
+        function gameLoop() {
+            if (!gameAktif) return;
+
+            // Jalankan Rintangan dari kanan ke kiri
+            rintanganX -= kecepatanRintangan;
+            if (rintanganX < -40) {
+                // Jika rintangan lewat layar kiri, reset ke kanan lagi
+                rintanganX = 600;
+                // Acak emoji rintangan baru biar seru
+                const indexAcak = Math.floor(Math.random() * daftarRintangan.length);
+                rintangan.innerText = daftarRintangan[indexAcak];
+                
+                // Tingkatkan kecepatan perlahan biar makin menantang
+                kecepatanRintangan += 0.3;
+            }
+            rintangan.style.left = rintanganX + "px";
+
+            // Hitung Skor (Jarak meter)
+            skor += 0.1;
+            skorElemen.innerText = Math.floor(skor);
+
+            // Cek Deteksi Tabrakan (Collision Detection)
+            let pitekY = parseInt(window.getComputedStyle(pitek).getPropertyValue("bottom"));
+            
+            // Koordinat ketat tabrakan
+            if (rintanganX > 50 && rintanganX < 90 && pitekY <= 40) {
+                // Jika koordinat X rintangan menabrak X pitek, DAN pitek sedang tidak melompat tinggi
+                mati();
+            }
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        // 3. FUNGSI GAME OVER
+        function mati() {
+            gameAktif = false;
+            skorAkhirElemen.innerText = Math.floor(skor);
+            gameOverScreen.style.display = "flex";
+        }
+
+        // 4. FUNGSI RESTART / MULAI AWAL
+        function mulaiGame() {
+            skor = 0;
+            rintanganX = 600;
+            kecepatanRintangan = 6;
+            gameAktif = true;
+            gameOverScreen.style.display = "none";
+            rintangan.innerText = "🪵";
+            
+            // Jalankan loop game
+            gameLoop();
+        }
+
+        // Jalankan game otomatis saat file dibuka
+        mulaiGame();
+    </script>
+</body>
+</html>
