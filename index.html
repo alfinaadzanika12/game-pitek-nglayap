@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pitek Nglayap: Petualangan si Ayam Kampung</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #222;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: 'Arial', sans-serif;
+            color: white;
+            overflow: hidden;
+        }
+        canvas {
+            border: 4px solid #fff;
+            background-color: #87CEEB; /* Warna langit */
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+        }
+        #info {
+            position: absolute;
+            top: 10px;
+            text-align: center;
+            width: 100%;
+            font-size: 16px;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="info">Tekan **SPASI** atau **Ketuk Layar** untuk Melompat</div>
+    <canvas id="gameCanvas" width="800" height="400"></canvas>
+
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+
+        // Status Game
+        let score = 0;
+        let gameOver = false;
+
+        // Konfigurasi Pitek (Ayam)
+        const pitek = {
+            x: 100,
+            y: 300,
+            width: 40,
+            height: 40,
+            gravity: 0.6,
+            velocity: 0,
+            jumpPower: -12,
+            isJumping: false,
+            draw: function() {
+                // Badan Ayam (Oranye)
+                ctx.fillStyle = "#FF9800";
+                ctx.fillRect(this.x, this.y, this.width, this.height);
+                
+                // Jengger (Merah)
+                ctx.fillStyle = "#FF0000";
+                ctx.fillRect(this.x + 25, this.y - 10, 10, 10);
+                
+                // Paruh (Kuning)
+                ctx.fillStyle = "#FFEB3B";
+                ctx.fillRect(this.x + 35, this.y + 10, 10, 8);
+                
+                // Mata (Hitam)
+                ctx.fillStyle = "#000000";
+                ctx.fillRect(this.x + 25, this.y + 5, 4, 4);
+            },
+            jump: function() {
+                if (!this.isJumping) {
+                    this.velocity = this.jumpPower;
+                    this.isJumping = true;
+                }
+            },
+            update: function() {
+                this.velocity += this.gravity;
+                this.y += this.velocity;
+
+                // Batasan tanah
+                if (this.y >= 310) {
+                    this.y = 310;
+                    this.velocity = 0;
+                    this.isJumping = false;
+                }
+            }
+        };
+
+        // Konfigurasi Rintangan (Emak Matic)
+        const emakMatic = {
+            x: canvas.width + 100,
+            y: 320,
+            width: 50,
+            height: 30,
+            speed: 6,
+            draw: function() {
+                // Motor (Merah)
+                ctx.fillStyle = "#D32F2F";
+                ctx.fillRect(this.x, this.y, this.width, this.height);
+                
+                // Lampu Sein Kiri Nyala (Padahal mau belok kanan)
+                ctx.fillStyle = "#FFEB3B";
+                ctx.fillRect(this.x, this.y + 5, 5, 5);
+                
+                // Pengendara (Abu-abu)
+                ctx.fillStyle = "#757575";
+                ctx.fillRect(this.x + 15, this.y - 20, 20, 25);
+            },
+            update: function() {
+                this.x -= this.speed;
+
+                // Jika lolos dari layar, reset ke kanan dan tambah skor
+                if (this.x < -this.width) {
+                    this.x = canvas.width + Math.random() * 300 + 100;
+                    score++;
+                    // Meningkatkan kecepatan perlahan agar makin menantang
+                    this.speed += 0.2;
+                }
+            }
+        };
+
+        // Lingkungan (Tanah & Awan)
+        function drawEnvironment() {
+            // Tanah
+            ctx.fillStyle = "#4CAF50";
+            ctx.fillRect(0, 350, canvas.width, 50);
+            ctx.fillStyle = "#8D6E63";
+            ctx.fillRect(0, 365, canvas.width, 35);
+        }
+
+        // Cek Tabrakan (Collision Detection)
+        function checkCollision() {
+            if (
+                pitek.x < emakMatic.x + emakMatic.width &&
+                pitek.x + pitek.width > emakMatic.x &&
+                pitek.y < emakMatic.y + emakMatic.height &&
+                pitek.y + pitek.height > emakMatic.y
+            ) {
+                gameOver = true;
+            }
+        }
+
+        // Tampilkan Skor dan Tulisan Game Over
+        function drawUI() {
+            ctx.fillStyle = "#000000";
+            ctx.font = "20px Arial";
+            ctx.fillText(`Jarak Nglayap: ${score} meter`, 20, 40);
+
+            if (gameOver) {
+                ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                ctx.fillStyle = "#FFFFFF";
+                ctx.font = "40px Arial";
+                ctx.textAlign = "center";
+                ctx.fillText("PITEK KETABRAK EMAK MATIC!", canvas.width / 2, canvas.height / 2 - 20);
+                
+                ctx.font = "20px Arial";
+                ctx.fillText("Tekan SPASI atau KLIK untuk Main Lagi", canvas.width / 2, canvas.height / 2 + 30);
+            }
+        }
+
+        // Reset Game
+        function resetGame() {
+            score = 0;
+            gameOver = false;
+            pitek.y = 310;
+            pitek.velocity = 0;
+            emakMatic.x = canvas.width + 100;
+            emakMatic.speed = 6;
+        }
+
+        // Game Loop Utama
+        function gameLoop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            drawEnvironment();
+
+            if (!gameOver) {
+                pitek.update();
+                emakMatic.update();
+                checkCollision();
+            }
+
+            pitek.draw();
+            emakMatic.draw();
+            drawUI();
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Kontrol Input (Keyboard & Touch)
+        window.addEventListener("keydown", function(e) {
+            if (e.code === "Space") {
+                if (gameOver) {
+                    resetGame();
+                } else {
+                    pitek.jump();
+                }
+            }
+        });
+
+        window.addEventListener("touchstart", function() {
+            if (gameOver) {
+                resetGame();
+            } else {
+                pitek.jump();
+            }
+        });
+
+        canvas.addEventListener("click", function() {
+            if (gameOver) {
+                resetGame();
+            } else {
+                pitek.jump();
+            }
+        });
+
+        // Mulai Game
+        gameLoop();
+    </script>
+</body>
+</html>
