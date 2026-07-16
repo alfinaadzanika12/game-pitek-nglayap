@@ -3,34 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pitek Nglayap: Petualangan si Ayam Kampung</title>
+    <title>Pitek Nglayap: Petualangan si Ayam Kampung v2.0</title>
     <style>
         body {
             margin: 0;
             padding: 0;
-            background-color: #222;
+            background-color: #1a1a1a;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             height: 100vh;
-            font-family: 'Arial', sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             color: white;
             overflow: hidden;
         }
         canvas {
-            border: 4px solid #fff;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
-            transition: background-color 1s ease; /* Transisi halus saat ganti warna langit */
+            border: 6px solid #fff;
+            border-radius: 8px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+            transition: all 0.5s ease;
         }
         #info {
             position: absolute;
-            top: 10px;
+            top: 20px;
             text-align: center;
             width: 100%;
-            font-size: 16px;
+            font-size: 18px;
+            font-weight: bold;
             pointer-events: none;
-            text-shadow: 1px 1px 2px #000;
+            text-shadow: 2px 2px 4px #000;
+            letter-spacing: 1px;
+            animation: pulse 1.5s infinite alternate;
+        }
+        @keyframes pulse {
+            from { opacity: 0.7; }
+            to { opacity: 1; transform: scale(1.02); }
         }
     </style>
 </head>
@@ -47,37 +55,86 @@
         let score = 0;
         let gameOver = false;
         
-        // Sistem Level
+        // Sistem Level & Visual
         let currentLevel = 1;
-        let levelDescription = "Halaman Rumah: Nyantai dolo.";
-        let skyColor = "#87CEEB";
+        let levelDescription = "Level 1 - Halaman Rumah: Nyantai dolo.";
+        let skyGradientTop = "#87CEEB";
+        let skyGradientBottom = "#E0F7FA";
+        let groundColorTop = "#4CAF50";
+        let groundColorBottom = "#2E7D32";
 
-        // Konfigurasi Pitek (Ayam)
+        // Efek Awan Bergerak
+        let clouds = [
+            { x: 100, y: 50, size: 30, speed: 0.5 },
+            { x: 400, y: 80, size: 40, speed: 0.3 },
+            { x: 700, y: 40, size: 25, speed: 0.6 }
+        ];
+
+        // Efek Partikel Debu Roda
+        let particles = [];
+
+        // Konfigurasi Pitek (Ayam) dengan visual lebih hidup
         const pitek = {
             x: 100,
             y: 300,
-            width: 40,
-            height: 40,
-            gravity: 0.6,
+            width: 45,
+            height: 45,
+            gravity: 0.7,
             velocity: 0,
-            jumpPower: -12,
+            jumpPower: -13,
             isJumping: false,
+            wingWiggle: 0,
             draw: function() {
-                // Badan Ayam (Oranye)
+                ctx.save();
+                // Efek Shadow/Bayangan Ayam
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = "rgba(0,0,0,0.3)";
+
+                // Kaki (Kuning)
+                ctx.fillStyle = "#FFB300";
+                ctx.fillRect(this.x + 12, this.y + this.height - 5, 4, 10);
+                ctx.fillRect(this.x + 28, this.y + this.height - 5, 4, 10);
+
+                // Badan Ayam Bulat (Oranye)
                 ctx.fillStyle = "#FF9800";
-                ctx.fillRect(this.x, this.y, this.width, this.height);
+                ctx.beginPath();
+                ctx.arc(this.x + 22, this.y + 22, 20, 0, Math.PI * 2);
+                ctx.fill();
                 
-                // Jengger (Merah)
-                ctx.fillStyle = "#FF0000";
-                ctx.fillRect(this.x + 25, this.y - 10, 10, 10);
+                // Jengger Melengkung (Merah)
+                ctx.fillStyle = "#E53935";
+                ctx.beginPath();
+                ctx.arc(this.x + 25, this.y + 3, 7, 0, Math.PI * 2);
+                ctx.arc(this.x + 32, this.y, 6, 0, Math.PI * 2);
+                ctx.fill();
                 
-                // Paruh (Kuning)
-                ctx.fillStyle = "#FFEB3B";
-                ctx.fillRect(this.x + 35, this.y + 10, 10, 8);
+                // Paruh Lancip (Kuning)
+                ctx.fillStyle = "#FFD54F";
+                ctx.beginPath();
+                ctx.moveTo(this.x + 38, this.y + 15);
+                ctx.lineTo(this.x + 48, this.y + 20);
+                ctx.lineTo(this.x + 38, this.y + 25);
+                ctx.fill();
                 
-                // Mata (Hitam)
+                // Mata Bulat Besar
+                ctx.fillStyle = "#FFFFFF";
+                ctx.beginPath();
+                ctx.arc(this.x + 30, this.y + 14, 5, 0, Math.PI * 2);
+                ctx.fill();
                 ctx.fillStyle = "#000000";
-                ctx.fillRect(this.x + 25, this.y + 5, 4, 4);
+                ctx.beginPath();
+                ctx.arc(this.x + 31, this.y + 14, 2.5, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Sayap Bergerak (Animasi saat melompat/jalan)
+                this.wingWiggle += 0.2;
+                let wingOffset = this.isJumping ? Math.sin(this.wingWiggle) * 5 : 0;
+                ctx.fillStyle = "#FB8C00";
+                ctx.beginPath();
+                ctx.ellipse(this.x + 15, this.y + 24 + wingOffset, 10, 6, Math.PI/6, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.restore();
             },
             jump: function() {
                 if (!this.isJumping) {
@@ -89,128 +146,271 @@
                 this.velocity += this.gravity;
                 this.y += this.velocity;
 
-                // Batasan tanah
-                if (this.y >= 310) {
-                    this.y = 310;
+                // Batasan tanah disesuaikan ukuran ayam
+                if (this.y >= 305) {
+                    this.y = 305;
                     this.velocity = 0;
                     this.isJumping = false;
                 }
             }
         };
 
-        // Konfigurasi Rintangan (Emak Matic)
+        // Konfigurasi Rintangan (Emak Matic) Lebih Keren
         const emakMatic = {
             x: canvas.width + 100,
-            y: 320,
-            width: 50,
-            height: 30,
+            y: 315,
+            width: 60,
+            height: 40,
             speed: 6,
+            wheelAngle: 0,
             draw: function() {
-                // Motor (Merah)
-                ctx.fillStyle = "#D32F2F";
-                ctx.fillRect(this.x, this.y, this.width, this.height);
+                ctx.save();
                 
-                // Lampu Sein Kiri Nyala (Padahal mau belok kanan)
-                ctx.fillStyle = "#FFEB3B";
-                ctx.fillRect(this.x, this.y + 5, 5, 5);
+                // Efek asap/debu ngebut di belakang motor
+                if (Math.random() < 0.4 && !gameOver) {
+                    particles.push({
+                        x: this.x + this.width,
+                        y: this.y + this.height - 5,
+                        size: Math.random() * 6 + 2,
+                        opacity: 1
+                    });
+                }
+
+                // Badan Motor (Desain lebih modern & aerodinamis)
+                ctx.fillStyle = "#E53935";
+                ctx.beginPath();
+                ctx.moveTo(this.x, this.y + 15);
+                ctx.lineTo(this.x + 45, this.y + 10);
+                ctx.lineTo(this.x + 55, this.y + 30);
+                ctx.lineTo(this.x, this.y + 35);
+                ctx.closePath();
+                ctx.fill();
+
+                // Kaca Depan / Stang
+                ctx.strokeStyle = "#FFF";
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.moveTo(this.x + 10, this.y + 10);
+                ctx.lineTo(this.x + 15, this.y - 5);
+                ctx.stroke();
+
+                // Lampu Sein Kiri Berkedip Cepat (Padahal mau belok kanan!)
+                if (Math.floor(Date.now() / 150) % 2 === 0) {
+                    ctx.fillStyle = "#FFEB3B";
+                    ctx.shadowBlur = 15;
+                    ctx.shadowColor = "#FFEB3B";
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y + 18, 5, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                ctx.restore();
+
+                // Pengendara (Emak-Emak Legendaris Pake Helm Cat/Konde)
+                ctx.fillStyle = "#673AB7"; // Baju Daster Ungu
+                ctx.fillRect(this.x + 18, this.y - 15, 25, 25);
                 
-                // Pengendara (Abu-abu)
-                ctx.fillStyle = "#757575";
-                ctx.fillRect(this.x + 15, this.y - 20, 20, 25);
+                ctx.fillStyle = "#FFCCBC"; // Tangan/Muka
+                ctx.fillRect(this.x + 12, this.y - 8, 8, 8);
+
+                ctx.fillStyle = "#FFEB3B"; // Helm Kuning Glowing
+                ctx.beginPath();
+                ctx.arc(this.x + 30, this.y - 20, 10, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Roda Berputar (Hitam & Silver)
+                this.wheelAngle += this.speed * 0.05;
+                ctx.fillStyle = "#333";
+                ctx.beginPath(); ctx.arc(this.x + 12, this.y + 35, 10, 0, Math.PI*2); ctx.fill();
+                ctx.beginPath(); ctx.arc(this.x + 48, this.y + 35, 10, 0, Math.PI*2); ctx.fill();
+                
+                // Detail Velg Roda
+                ctx.strokeStyle = "#BBB";
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(this.x + 12, this.y + 35);
+                ctx.lineTo(this.x + 12 + Math.cos(this.wheelAngle)*8, this.y + 35 + Math.sin(this.wheelAngle)*8);
+                ctx.moveTo(this.x + 48, this.y + 35);
+                ctx.lineTo(this.x + 48 + Math.cos(this.wheelAngle)*8, this.y + 35 + Math.sin(this.wheelAngle)*8);
+                ctx.stroke();
             },
             update: function() {
                 this.x -= this.speed;
 
-                // Jika lolos dari layar, reset ke kanan dan tambah skor
                 if (this.x < -this.width) {
-                    this.x = canvas.width + Math.random() * 300 + 100;
+                    this.x = canvas.width + Math.random() * 400 + 150;
                     score++;
-                    // Kecepatan bertambah sedikit setiap berhasil melewati rintangan
-                    this.speed += 0.3;
+                    // Base speed bertambah dinamis seiring skor
+                    this.speed += 0.4;
                 }
             }
         };
 
-        // Fungsi Update Logika Level & Mekanik Tingkat Kesulitan
+        // Fungsi Update Logika Level & Perubahan Mekanik/Visual
         function updateLevel() {
-            if (score <= 5) {
+            if (score < 3) {
                 currentLevel = 1;
                 levelDescription = "Level 1 - Halaman Rumah: Emak baru manasin motor.";
-                skyColor = "#87CEEB"; // Biru cerah asli
-            } else if (score > 5 && score <= 15) {
-                currentLevel = 2;
-                levelDescription = "Level 2 - Gang Kampung: Awas jalanan makin sempit!";
-                skyColor = "#E67E22"; // Oranye sore hari
-            } else {
-                currentLevel = 3;
-                levelDescription = "Level 3 - Jalan Raya Utama: MODE BRUTAL! Emak sein kiri belok kanan!";
-                skyColor = "#34495E"; // Gelap/Malam hari
+                skyGradientTop = "#87CEEB"; skyGradientBottom = "#E0F7FA";
+                groundColorTop = "#4CAF50"; groundColorBottom = "#2E7D32";
+            } 
+            else if (score >= 3 && score < 5) {
+                // TINGKATAN BARU 1: Level 3 (Gang Sempit Sore Hari + Akselerasi)
+                if (currentLevel !== 3) { emakMatic.speed += 2; currentLevel = 3; }
+                levelDescription = "Level 3 - Gang Kampung: Sore hari makin padat, Emak ngebut! ⚡";
+                skyGradientTop = "#E67E22"; skyGradientBottom = "#F1C40F";
+                groundColorTop = "#795548"; groundColorBottom = "#4E342E";
+            } 
+            else if (score >= 5 && score < 7) {
+                // TINGKATAN BARU 2: Level 5 (Pasar Malam / Neon City)
+                if (currentLevel !== 5) { emakMatic.speed += 2.5; currentLevel = 5; }
+                levelDescription = "Level 5 - Pasar Malam: Awas silau lampu neon dan emak makin kalap! 🎆";
+                skyGradientTop = "#2C3E50"; skyGradientBottom = "#2980B9";
+                groundColorTop = "#34495E"; groundColorBottom = "#2C3E50";
             }
-            // Terapkan warna langit ke elemen style canvas secara berkala
-            canvas.style.backgroundColor = skyColor;
+            else if (score >= 7 && score < 10) {
+                // TINGKATAN BARU 3: Level 7 (Jalan Layang Badai Petir)
+                if (currentLevel !== 7) { emakMatic.speed += 3; currentLevel = 7; }
+                levelDescription = "Level 7 - Jalan Layang: Badai datang! Kecepatan Emak di luar nalar! ⛈️";
+                skyGradientTop = "#111111"; skyGradientBottom = "#444444";
+                groundColorTop = "#555555"; groundColorBottom = "#222222";
+            } 
+            else if (score >= 10) {
+                // TINGKATAN BARU 4: Level 10 (MODE DEWA / CYBERPUNK APOCALYPSE)
+                if (currentLevel !== 10) { emakMatic.speed += 4; currentLevel = 10; }
+                levelDescription = "Level 10 - DIMENSI LAIN: Kiamat Matic! Sein Kiri Belok Kanan Maksimal! 🔥👹";
+                skyGradientTop = "#6A057F"; skyGradientBottom = "#FF1493";
+                groundColorTop = "#220033"; groundColorBottom = "#110022";
+            }
         }
 
-        // Lingkungan (Tanah)
+        // Menggambar Background Gradasi, Awan, dan Partikel
         function drawEnvironment() {
-            // Tanah rumput atas
-            ctx.fillStyle = "#4CAF50";
+            // Langit Gradasi
+            let skyGrad = ctx.createLinearGradient(0, 0, 0, 350);
+            skyGrad.addColorStop(0, skyGradientTop);
+            skyGrad.addColorStop(1, skyGradientBottom);
+            ctx.fillStyle = skyGrad;
+            ctx.fillRect(0, 0, canvas.width, 350);
+
+            // Awan Bergerak
+            ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
+            clouds.forEach(cloud => {
+                if (!gameOver) cloud.x -= cloud.speed;
+                if (cloud.x < -100) cloud.x = canvas.width + 50;
+                
+                ctx.beginPath();
+                ctx.arc(cloud.x, cloud.y, cloud.size, 0, Math.PI * 2);
+                ctx.arc(cloud.x + cloud.size*0.6, cloud.y - cloud.size*0.2, cloud.size*0.8, 0, Math.PI * 2);
+                ctx.arc(cloud.x + cloud.size*1.2, cloud.y, cloud.size*0.6, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // Efek Khusus Level 7 (Petir)
+            if (currentLevel === 7 && Math.random() < 0.02) {
+                ctx.fillStyle = "rgba(255,255,255,0.8)";
+                ctx.fillRect(0,0,canvas.width,canvas.height);
+            }
+
+            // Tanah Gradasi
+            let groundGrad = ctx.createLinearGradient(0, 350, 0, canvas.height);
+            groundGrad.addColorStop(0, groundColorTop);
+            groundGrad.addColorStop(1, groundColorBottom);
+            ctx.fillStyle = groundGrad;
             ctx.fillRect(0, 350, canvas.width, 50);
-            // Tanah cokelat bawah
-            ctx.fillStyle = "#8D6E63";
-            ctx.fillRect(0, 365, canvas.width, 35);
+
+            // Garis Pembatas Jalan (Estetika agar tampak bergerak)
+            ctx.fillStyle = "rgba(255,255,255,0.4)";
+            for (let i = 0; i < canvas.width; i += 80) {
+                let offset = gameOver ? 0 : (Math.floor(Date.now() / 20) % 80);
+                ctx.fillRect(i - offset, 370, 40, 5);
+            }
+
+            // Menggambar & Update Partikel Asap Motor
+            for (let i = particles.length - 1; i >= 0; i--) {
+                let p = particles[i];
+                p.x += 1;
+                p.y -= 0.5;
+                p.opacity -= 0.02;
+                ctx.fillStyle = `rgba(200, 200, 200, ${p.opacity})`;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI*2);
+                ctx.fill();
+                if (p.opacity <= 0) particles.splice(i, 1);
+            }
         }
 
-        // Cek Tabrakan (Collision Detection)
+        // Deteksi Tabrakan Presisi
         function checkCollision() {
+            // Hitbox sedikit diperkecil agar terasa lebih adil bagi pemain
+            let pitekHitbox = { x: pitek.x + 5, y: pitek.y + 5, w: pitek.width - 10, h: pitek.height - 5 };
+            let emakHitbox = { x: emakMatic.x + 5, y: emakMatic.y + 2, w: emakMatic.width - 10, h: emakMatic.height - 4 };
+
             if (
-                pitek.x < emakMatic.x + emakMatic.width &&
-                pitek.x + pitek.width > emakMatic.x &&
-                pitek.y < emakMatic.y + emakMatic.height &&
-                pitek.y + pitek.height > emakMatic.y
+                pitekHitbox.x < emakHitbox.x + emakHitbox.w &&
+                pitekHitbox.x + pitekHitbox.w > emakHitbox.x &&
+                pitekHitbox.y < emakHitbox.y + emakHitbox.h &&
+                pitekHitbox.y + pitekHitbox.h > emakHitbox.y
             ) {
                 gameOver = true;
             }
         }
 
-        // Tampilkan Skor, Level, dan Tulisan Game Over
+        // Antarmuka UI Modern
         function drawUI() {
-            // UI Status Game
-            ctx.fillStyle = "#000000";
-            ctx.font = "bold 18px Arial";
-            ctx.textAlign = "left";
-            ctx.fillText(`Jarak Nglayap: ${score} meter`, 20, 40);
-            
-            // Teks Deskripsi Level saat ini
-            ctx.font = "italic 16px Arial";
-            ctx.fillText(levelDescription, 20, 65);
+            // Kotak Skor Transparan di Kiri Atas
+            ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
+            ctx.fillRect(10, 10, 320, 75);
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = "rgba(255, 255, 255, 0.2)";
+            ctx.strokeRect(10, 10, 320, 75);
 
+            ctx.fillStyle = "#FFF";
+            ctx.font = "bold 20px 'Segoe UI', Arial";
+            ctx.textAlign = "left";
+            ctx.fillText(`🐔 Jarak Nglayap: ${score} m`, 25, 40);
+            
+            ctx.font = "500 14px 'Segoe UI', Arial";
+            ctx.fillStyle = "#FFEB3B";
+            ctx.fillText(levelDescription, 25, 68);
+
+            // Layar Game Over yang Dramatis
             if (gameOver) {
-                ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+                ctx.fillStyle = "rgba(0, 0, 0, 0.85)";
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-                ctx.fillStyle = "#FFFFFF";
-                ctx.font = "40px Arial";
+                // Efek Glitch Merah Neon untuk Tulisan Kalah
+                ctx.fillStyle = "#FF1744";
+                ctx.font = "bold 38px 'Segoe UI', Arial";
                 ctx.textAlign = "center";
-                ctx.fillText("PITEK KETABRAK EMAK MATIC!", canvas.width / 2, canvas.height / 2 - 20);
+                ctx.shadowBlur = 20;
+                ctx.shadowColor = "#FF1744";
+                ctx.fillText("PITEK LEBUR DITABRAK EMAK!", canvas.width / 2, canvas.height / 2 - 30);
                 
-                ctx.font = "20px Arial";
-                ctx.fillText(`Kamu bertahan di ${levelDescription.split(':')[0]}`, canvas.width / 2, canvas.height / 2 + 20);
-                ctx.fillText("Tekan SPASI, KLIK, atau TAP untuk Main Lagi", canvas.width / 2, canvas.height / 2 + 60);
+                ctx.shadowBlur = 0; // reset shadow
+                ctx.fillStyle = "#FFF";
+                ctx.font = "18px Arial";
+                ctx.fillText(`Skor Akhir Anda mencapai Zona Level ${currentLevel}`, canvas.width / 2, canvas.height / 2 + 15);
+                
+                ctx.fillStyle = "#00E676";
+                ctx.font = "bold 16px Arial";
+                ctx.fillText("Tekan SPASI atau TAP LAYAR untuk Membalas Dendam!", canvas.width / 2, canvas.height / 2 + 65);
             }
         }
 
-        // Reset Game
+        // Reset Game ke Kondisi Awal
         function resetGame() {
             score = 0;
             gameOver = false;
-            pitek.y = 310;
+            currentLevel = 1;
+            pitek.y = 305;
             pitek.velocity = 0;
             emakMatic.x = canvas.width + 100;
-            emakMatic.speed = 6;
+            emakMatic.speed = 6.5; 
+            particles = [];
             updateLevel();
         }
 
-        // Game Loop Utama
+        // Loop Game Utama
         function gameLoop() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -219,7 +419,7 @@
             if (!gameOver) {
                 pitek.update();
                 emakMatic.update();
-                updateLevel(); // Cek status kenaikan level
+                updateLevel(); 
                 checkCollision();
             }
 
@@ -230,34 +430,27 @@
             requestAnimationFrame(gameLoop);
         }
 
-        // Kontrol Input (Keyboard & Touch)
+        // Event Listener Kontrol (Keyboard & Mouse/Touch)
         window.addEventListener("keydown", function(e) {
             if (e.code === "Space") {
-                if (gameOver) {
-                    resetGame();
-                } else {
-                    pitek.jump();
-                }
+                e.preventDefault(); // Menghindari halaman turun saat tekan spasi
+                if (gameOver) resetGame();
+                else pitek.jump();
             }
         });
 
-        window.addEventListener("touchstart", function() {
-            if (gameOver) {
-                resetGame();
-            } else {
-                pitek.jump();
-            }
+        canvas.addEventListener("touchstart", function(e) {
+            e.preventDefault();
+            if (gameOver) resetGame();
+            else pitek.jump();
         });
 
-        canvas.addEventListener("click", function() {
-            if (gameOver) {
-                resetGame();
-            } else {
-                pitek.jump();
-            }
+        canvas.addEventListener("mousedown", function() {
+            if (gameOver) resetGame();
+            else pitek.jump();
         });
 
-        // Mulai Game pertama kali
+        // Jalankan Game
         resetGame();
         gameLoop();
     </script>
