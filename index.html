@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pitek Nglayap: Petualangan si Ayam Kampung v2.5</title>
+    <title>Pitek Nglayap: Petualangan si Ayam Kampung v2.6</title>
     <style>
         body {
             margin: 0;
@@ -76,12 +76,11 @@
     <div id="info">PITEK NGLAYAP</div>
     <div id="sub-info">Tekan SPASI atau Ketuk Layar untuk Melompat</div>
     
-    <div id="logo-container">
+   <div id="logo-container">
         <img src="logo1.png.jpeg" alt="" class="game-logo">
         <img src="logo2.png.jpeg" alt="" class="game-logo">
         <img src="logo3.png.jpeg" alt="" class="game-logo">
     </div>
-
     <canvas id="gameCanvas" width="800" height="400"></canvas>
 
     <script>
@@ -89,7 +88,7 @@
         const ctx = canvas.getContext("2d");
 
         let score = 0;
-        let coinScore = 0; // Skor Koin Baru
+        let coinScore = 0; 
         let gameOver = false;
         
         let currentLevel = 1;
@@ -106,74 +105,73 @@
         ];
 
         let particles = [];
-        let coinEffects = []; // Efek kilauan saat koin diambil
+        let coinEffects = []; 
 
-        // OBJEK KOIN MELAYANG DAN HIDUP
+        // 1. KOIN UTAMA ATAS
         const koin = {
             x: canvas.width + 200,
-            y: 220, // Ketinggian melayang awal
-            baseY: 220, // Dasar ketinggian untuk efek naik-turun
+            y: 180, 
+            baseY: 180, 
             radius: 12,
             speed: 6,
-            angle: 0, // Untuk efek melayang naik turun
-            spinAngle: 0, // Untuk efek putaran koin
+            angle: 0, 
+            spinAngle: 0, 
             active: true,
-            
             draw: function() {
                 if (!this.active) return;
-                
                 ctx.save();
-                // Efek bayangan koin di udara
                 ctx.shadowBlur = 12;
                 ctx.shadowColor = "#FFD700";
-                
-                // Menghitung animasi putaran horizontal koin menggunakan Math.abs(Math.sin)
                 let spinWidth = Math.abs(Math.sin(this.spinAngle));
-                
-                // Gambar koin emas terluar
                 ctx.fillStyle = "#FFD700";
                 ctx.beginPath();
                 ctx.ellipse(this.x, this.y, this.radius * spinWidth, this.radius, 0, 0, Math.PI * 2);
                 ctx.fill();
-                
-                // Gambar list koin lebih gelap agar kelihatan 3D hidup
                 ctx.strokeStyle = "#DAA520";
                 ctx.lineWidth = 2;
                 ctx.stroke();
-
-                // Gambar lingkaran dalam koin
                 ctx.fillStyle = "#FFEA00";
                 ctx.beginPath();
                 ctx.ellipse(this.x, this.y, (this.radius - 4) * spinWidth, this.radius - 4, 0, 0, Math.PI * 2);
                 ctx.fill();
-                
                 ctx.restore();
             },
-            
             update: function() {
                 this.x -= this.speed;
-                
-                // Efek melayang hidup (Naik turun secara halus menggunakan Sinus)
                 this.angle += 0.05;
                 this.y = this.baseY + Math.sin(this.angle) * 15;
-                
-                // Kecepatan putaran koin
                 this.spinAngle += 0.07;
-
-                // Jika koin lewat layar kiri, munculkan lagi di kanan dengan tinggi acak
-                if (this.x < -this.radius) {
-                    this.respawn();
-                }
+                if (this.x < -this.radius) { this.respawn(); }
             },
-
             respawn: function() {
-                this.x = canvas.width + Math.random() * 600 + 200;
-                // Ketinggian acak (bisa diambil saat lompat atau santai)
-                this.baseY = Math.random() * 100 + 180; 
+                this.x = canvas.width + Math.random() * 800 + 400;
+                this.baseY = Math.random() * 40 + 140; 
                 this.active = true;
-                this.speed = emakMatic.speed; // Menyeimbangkan kecepatan koin dengan musuh
+                this.speed = emakMatic.speed;
             }
         };
+
+        // 2. ROMBONGAN KOIN BAWAH (SEDENGAN/RENDAH)
+        let rombonganKoin = [];
+        function buatRombonganKoin() {
+            rombonganKoin = [];
+            let startX = canvas.width + Math.random() * 300 + 200;
+            // Ketinggian sedengan (y: 290 agar pas dengan tinggi badan Pitek di tanah)
+            let tinggiSedengan = 290; 
+            
+            // Membuat grup berisi 3 koin berjajar horizontal
+            for (let i = 0; i < 3; i++) {
+                rombonganKoin.push({
+                    x: startX + (i * 45), // Jarak antar koin berjajar
+                    y: tinggiSedengan,
+                    baseY: tinggiSedengan,
+                    radius: 10,
+                    angle: Math.PI * (i * 0.5), // Membuat gerakan melayangnya bergelombang
+                    spinAngle: Math.random() * 5,
+                    active: true
+                });
+            }
+        }
 
         const pitek = {
             x: 100,
@@ -189,29 +187,24 @@
                 ctx.save();
                 ctx.shadowBlur = 10;
                 ctx.shadowColor = "rgba(0,0,0,0.3)";
-
                 ctx.fillStyle = "#FFB300";
                 ctx.fillRect(this.x + 12, this.y + this.height - 5, 4, 10);
                 ctx.fillRect(this.x + 28, this.y + this.height - 5, 4, 10);
-
                 ctx.fillStyle = "#FF9800";
                 ctx.beginPath();
                 ctx.arc(this.x + 22, this.y + 22, 20, 0, Math.PI * 2);
                 ctx.fill();
-                
                 ctx.fillStyle = "#E53935";
                 ctx.beginPath();
                 ctx.arc(this.x + 25, this.y + 3, 7, 0, Math.PI * 2);
                 ctx.arc(this.x + 32, this.y, 6, 0, Math.PI * 2);
                 ctx.fill();
-                
                 ctx.fillStyle = "#FFD54F";
                 ctx.beginPath();
                 ctx.moveTo(this.x + 38, this.y + 15);
                 ctx.lineTo(this.x + 48, this.y + 20);
                 ctx.lineTo(this.x + 38, this.y + 25);
                 ctx.fill();
-                
                 ctx.fillStyle = "#FFFFFF";
                 ctx.beginPath();
                 ctx.arc(this.x + 30, this.y + 14, 5, 0, Math.PI * 2);
@@ -220,14 +213,12 @@
                 ctx.beginPath();
                 ctx.arc(this.x + 31, this.y + 14, 2.5, 0, Math.PI * 2);
                 ctx.fill();
-
                 this.wingWiggle += 0.2;
                 let wingOffset = this.isJumping ? Math.sin(this.wingWiggle) * 5 : 0;
                 ctx.fillStyle = "#FB8C00";
                 ctx.beginPath();
                 ctx.ellipse(this.x + 15, this.y + 24 + wingOffset, 10, 6, Math.PI/6, 0, Math.PI * 2);
                 ctx.fill();
-
                 ctx.restore();
             },
             jump: function() {
@@ -239,7 +230,6 @@
             update: function() {
                 this.velocity += this.gravity;
                 this.y += this.velocity;
-
                 if (this.y >= 305) {
                     this.y = 305;
                     this.velocity = 0;
@@ -257,7 +247,6 @@
             wheelAngle: 0,
             draw: function() {
                 ctx.save();
-                
                 if (Math.random() < 0.4 && !gameOver) {
                     particles.push({
                         x: this.x + this.width,
@@ -266,7 +255,6 @@
                         opacity: 1
                     });
                 }
-
                 ctx.fillStyle = "#E53935";
                 ctx.beginPath();
                 ctx.moveTo(this.x, this.y + 15);
@@ -275,14 +263,12 @@
                 ctx.lineTo(this.x, this.y + 35);
                 ctx.closePath();
                 ctx.fill();
-
                 ctx.strokeStyle = "#FFF";
                 ctx.lineWidth = 3;
                 ctx.beginPath();
                 ctx.moveTo(this.x + 10, this.y + 10);
                 ctx.lineTo(this.x + 15, this.y - 5);
                 ctx.stroke();
-
                 if (Math.floor(Date.now() / 150) % 2 === 0) {
                     ctx.fillStyle = "#FFEB3B";
                     ctx.shadowBlur = 15;
@@ -292,23 +278,18 @@
                     ctx.fill();
                 }
                 ctx.restore();
-
                 ctx.fillStyle = "#673AB7"; 
                 ctx.fillRect(this.x + 18, this.y - 15, 25, 25);
-                
                 ctx.fillStyle = "#FFCCBC"; 
                 ctx.fillRect(this.x + 12, this.y - 8, 8, 8);
-
                 ctx.fillStyle = "#FFEB3B"; 
                 ctx.beginPath();
                 ctx.arc(this.x + 30, this.y - 20, 10, 0, Math.PI * 2);
                 ctx.fill();
-
                 this.wheelAngle += this.speed * 0.05;
                 ctx.fillStyle = "#333";
                 ctx.beginPath(); ctx.arc(this.x + 12, this.y + 35, 10, 0, Math.PI*2); ctx.fill();
                 ctx.beginPath(); ctx.arc(this.x + 48, this.y + 35, 10, 0, Math.PI*2); ctx.fill();
-                
                 ctx.strokeStyle = "#BBB";
                 ctx.lineWidth = 2;
                 ctx.beginPath();
@@ -320,7 +301,6 @@
             },
             update: function() {
                 this.x -= this.speed;
-
                 if (this.x < -this.width) {
                     this.x = canvas.width + Math.random() * 400 + 150;
                     score++;
@@ -331,8 +311,7 @@
 
         function updateLevel() {
             if (score < 3) {
-                currentLevel = 1;
-                levelDescription = "Level 1 - Halaman Rumah: Emak baru manasin motor.";
+                currentLevel = 1; levelDescription = "Level 1 - Halaman Rumah: Emak baru manasin motor.";
                 skyGradientTop = "#87CEEB"; skyGradientBottom = "#E0F7FA";
                 groundColorTop = "#4CAF50"; groundColorBottom = "#2E7D32";
             } 
@@ -348,15 +327,9 @@
                 skyGradientTop = "#2C3E50"; skyGradientBottom = "#2980B9";
                 groundColorTop = "#34495E"; groundColorBottom = "#2C3E50";
             }
-            else if (score >= 7 && score < 10) {
+            else if (score >= 7) {
                 if (currentLevel !== 7) { emakMatic.speed += 3; currentLevel = 7; }
-                levelDescription = "Level 7 - Jalan Layang: Badai datang! Kecepatan Emak di luar nalar! ⛈️";
-                skyGradientTop = "#111111"; skyGradientBottom = "#444444";
-                groundColorTop = "#555555"; groundColorBottom = "#222222";
-            } 
-            else if (score >= 10) {
-                if (currentLevel !== 10) { emakMatic.speed += 4; currentLevel = 10; }
-                levelDescription = "Level 10 - DIMENSI LAIN: Kiamat Matic! Sein Kiri Belok Kanan Maksimal! 🔥👹";
+                levelDescription = "Level 7 - Dimensi Kiamat: Sein Kiri Belok Kanan Maksimal! 🔥👹";
                 skyGradientTop = "#6A057F"; skyGradientBottom = "#FF1493";
                 groundColorTop = "#220033"; groundColorBottom = "#110022";
             }
@@ -373,18 +346,12 @@
             clouds.forEach(cloud => {
                 if (!gameOver) cloud.x -= cloud.speed;
                 if (cloud.x < -100) cloud.x = canvas.width + 50;
-                
                 ctx.beginPath();
                 ctx.arc(cloud.x, cloud.y, cloud.size, 0, Math.PI * 2);
                 ctx.arc(cloud.x + cloud.size*0.6, cloud.y - cloud.size*0.2, cloud.size*0.8, 0, Math.PI * 2);
                 ctx.arc(cloud.x + cloud.size*1.2, cloud.y, cloud.size*0.6, 0, Math.PI * 2);
                 ctx.fill();
             });
-
-            if (currentLevel === 7 && Math.random() < 0.02) {
-                ctx.fillStyle = "rgba(255,255,255,0.8)";
-                ctx.fillRect(0,0,canvas.width,canvas.height);
-            }
 
             let groundGrad = ctx.createLinearGradient(0, 350, 0, canvas.height);
             groundGrad.addColorStop(0, groundColorTop);
@@ -398,35 +365,22 @@
                 ctx.fillRect(i - offset, 370, 40, 5);
             }
 
-            // Partikel Asap Motor
             for (let i = particles.length - 1; i >= 0; i--) {
-                let p = particles[i];
-                p.x += 1;
-                p.y -= 0.5;
-                p.opacity -= 0.02;
+                let p = particles[i]; p.x += 1; p.y -= 0.5; p.opacity -= 0.02;
                 ctx.fillStyle = `rgba(200, 200, 200, ${p.opacity})`;
-                ctx.beginPath();
-                ctx.arc(p.x, p.y, p.size, 0, Math.PI*2);
-                ctx.fill();
+                ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); ctx.fill();
                 if (p.opacity <= 0) particles.splice(i, 1);
             }
 
-            // Animasi Efek Ledakan Koin Emas didapat
             for (let i = coinEffects.length - 1; i >= 0; i--) {
-                let ce = coinEffects[i];
-                ce.x += ce.vx;
-                ce.y += ce.vy;
-                ce.alpha -= 0.04;
+                let ce = coinEffects[i]; ce.x += ce.vx; ce.y += ce.vy; ce.alpha -= 0.04;
                 ctx.fillStyle = `rgba(255, 215, 0, ${ce.alpha})`;
-                ctx.beginPath();
-                ctx.arc(ce.x, ce.y, ce.size, 0, Math.PI*2);
-                ctx.fill();
+                ctx.beginPath(); ctx.arc(ce.x, ce.y, ce.size, 0, Math.PI*2); ctx.fill();
                 if (ce.alpha <= 0) coinEffects.splice(i, 1);
             }
         }
 
         function checkCollision() {
-            // Tabrakan dengan Emak Matic (Kalah)
             let pitekHitbox = { x: pitek.x + 5, y: pitek.y + 5, w: pitek.width - 10, h: pitek.height - 5 };
             let emakHitbox = { x: emakMatic.x + 5, y: emakMatic.y + 2, w: emakMatic.width - 10, h: emakMatic.height - 4 };
 
@@ -439,40 +393,48 @@
                 gameOver = true;
             }
 
-            // Tabrakan dengan Koin Melayang (Dapat Poin Koin)
+            // Deteksi Koin Atas
             if (koin.active) {
-                // Mencari jarak titik tengah Pitek ke titik tengah Koin
-                let pitekCenterX = pitek.x + pitek.width / 2;
-                let pitekCenterY = pitek.y + pitek.height / 2;
-                
-                let distX = Math.abs(pitekCenterX - koin.x);
-                let distY = Math.abs(pitekCenterY - koin.y);
-                
-                // Jika bersentuhan (menggunakan perhitungan radius objek)
+                let distX = Math.abs((pitek.x + pitek.width/2) - koin.x);
+                let distY = Math.abs((pitek.y + pitek.height/2) - koin.y);
                 if (distX < (pitek.width/2 + koin.radius) && distY < (pitek.height/2 + koin.radius)) {
-                    koin.active = false;
-                    coinScore += 1; // Tambah skor koin!
-                    
-                    // Buat efek kilauan koin pecah/hidup
-                    for(let i=0; i<8; i++){
-                        coinEffects.push({
-                            x: koin.x,
-                            y: koin.y,
-                            vx: (Math.random() - 0.5) * 6,
-                            vy: (Math.random() - 0.5) * 6,
-                            size: Math.random() * 4 + 2,
-                            alpha: 1
-                        });
-                    }
-                    
-                    // Munculkan lagi koin baru di kanan
-                    setTimeout(() => { koin.respawn(); }, 300);
+                    koin.active = false; coinScore++;
+                    buatEfekPecah(koin.x, koin.y);
+                    setTimeout(() => { koin.respawn(); }, 400);
                 }
+            }
+
+            // Deteksi Rombongan Koin Bawah
+            let semuaKoinHabis = true;
+            rombonganKoin.forEach(c => {
+                if (c.active) {
+                    semuaKoinHabis = false;
+                    let distX = Math.abs((pitek.x + pitek.width/2) - c.x);
+                    let distY = Math.abs((pitek.y + pitek.height/2) - c.y);
+                    if (distX < (pitek.width/2 + c.radius) && distY < (pitek.height/2 + c.radius)) {
+                        c.active = false; coinScore++;
+                        buatEfekPecah(c.x, c.y);
+                    }
+                }
+            });
+
+            // Jika rombongan koin bawah sudah terlewati semua atau habis diambil, buat lagi di depan
+            if (semuaKoinHabis || (rombonganKoin.length > 0 && rombonganKoin[2].x < -20)) {
+                buatRombonganKoin();
+            }
+        }
+
+        function buatEfekPecah(x, y) {
+            for(let i=0; i<6; i++){
+                coinEffects.push({
+                    x: x, y: y,
+                    vx: (Math.random() - 0.5) * 5, vy: (Math.random() - 0.5) * 5,
+                    size: Math.random() * 3 + 2, alpha: 1
+                });
             }
         }
 
         function drawUI() {
-            // Papan Skor yang Diperluas (Muat Jarak & Koin)
             ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
             ctx.fillRect(10, 10, 340, 90);
             ctx.lineWidth = 2;
@@ -483,10 +445,8 @@
             ctx.font = "bold 16px 'Segoe UI', Arial";
             ctx.textAlign = "left";
             ctx.fillText(`🐔 Jarak Nglayap : ${score} m`, 25, 35);
-            
-            ctx.fillStyle = "#FFD700"; // Warna emas koin
+            ctx.fillStyle = "#FFD700"; 
             ctx.fillText(`🪙 Koin Dikoleksi : ${coinScore} Bijis`, 25, 60);
-            
             ctx.font = "500 13px 'Segoe UI', Arial";
             ctx.fillStyle = "#FFEB3B";
             ctx.fillText(levelDescription, 25, 85);
@@ -494,54 +454,71 @@
             if (gameOver) {
                 ctx.fillStyle = "rgba(0, 0, 0, 0.85)";
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
-
                 ctx.fillStyle = "#FF1744";
                 ctx.font = "bold 38px 'Segoe UI', Arial";
                 ctx.textAlign = "center";
                 ctx.shadowBlur = 20;
                 ctx.shadowColor = "#FF1744";
                 ctx.fillText("PITEK LEBUR DITABRAK EMAK!", canvas.width / 2, canvas.height / 2 - 40);
-                
-                ctx.shadowBlur = 0; 
-                ctx.fillStyle = "#FFF";
-                ctx.font = "18px Arial";
+                ctx.shadowBlur = 0; ctx.fillStyle = "#FFF"; ctx.font = "18px Arial";
                 ctx.fillText(`Skor Jarak: ${score}m  |  Total Koin Didapat: ${coinScore}`, canvas.width / 2, canvas.height / 2 + 10);
-                
-                ctx.fillStyle = "#00E676";
-                ctx.font = "bold 16px Arial";
+                ctx.fillStyle = "#00E676"; ctx.font = "bold 16px Arial";
                 ctx.fillText("Tekan SPASI atau TAP LAYAR untuk Membalas Dendam!", canvas.width / 2, canvas.height / 2 + 65);
             }
         }
 
         function resetGame() {
-            score = 0;
-            coinScore = 0; // Reset koin
-            gameOver = false;
-            currentLevel = 1;
-            pitek.y = 305;
-            pitek.velocity = 0;
-            emakMatic.x = canvas.width + 100;
-            emakMatic.speed = 6.5; 
-            particles = [];
-            coinEffects = [];
+            score = 0; coinScore = 0; gameOver = false; currentLevel = 1;
+            pitek.y = 305; pitek.velocity = 0;
+            emakMatic.x = canvas.width + 100; emakMatic.speed = 6.5; 
+            particles = []; coinEffects = [];
             koin.respawn();
+            buatRombonganKoin();
             updateLevel();
         }
 
         function gameLoop() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-
             drawEnvironment();
 
             if (!gameOver) {
                 pitek.update();
                 emakMatic.update();
-                koin.update(); // Update koin
+                koin.update();
+                
+                // Update pergerakan rombongan koin bawah yang bergelombang hidup
+                rombonganKoin.forEach(c => {
+                    c.x -= emakMatic.speed; 
+                    c.angle += 0.06;
+                    c.y = c.baseY + Math.sin(c.angle) * 7; // Ombak naik-turunnya lebih lembut/sedikit
+                    c.spinAngle += 0.08;
+                });
+
                 updateLevel(); 
                 checkCollision();
             }
 
-            koin.draw(); // Gambar koin melayang
+            // Gambar Koin Atas
+            koin.draw();
+
+            // Gambar Rombongan Koin Bawah yang Hidup Berputar
+            rombonganKoin.forEach(c => {
+                if (!c.active) return;
+                ctx.save();
+                ctx.shadowBlur = 8;
+                ctx.shadowColor = "#FFD700";
+                let spinWidth = Math.abs(Math.sin(c.spinAngle));
+                ctx.fillStyle = "#FFD700";
+                ctx.beginPath();
+                ctx.ellipse(c.x, c.y, c.radius * spinWidth, c.radius, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = "#FFEA00";
+                ctx.beginPath();
+                ctx.ellipse(c.x, c.y, (c.radius - 3) * spinWidth, c.radius - 3, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            });
+
             pitek.draw();
             emakMatic.draw();
             drawUI();
