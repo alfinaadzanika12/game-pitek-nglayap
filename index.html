@@ -23,7 +23,7 @@
             border-radius: 8px;
             box-shadow: 0 20px 40px rgba(0,0,0,0.6);
             transition: all 0.5s ease;
-            margin-top: 40px;
+            margin-top: 20px;
         }
         #info {
             position: absolute;
@@ -48,6 +48,21 @@
             text-shadow: 1px 1px 3px #000;
             letter-spacing: 1px;
         }
+        /* Style untuk wadah 3 logo berjajar di tengah */
+        #logo-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px; /* Jarak antar logo */
+            margin-top: 95px; /* Menempatkannya tepat di bawah sub-info dan di atas canvas */
+            z-index: 10;
+        }
+        .game-logo {
+            width: 50px; /* Ukuran lebar logo */
+            height: 50px; /* Ukuran tinggi logo */
+            object-fit: contain;
+            filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.5));
+        }
         @keyframes neonRainbow {
             0% { color: #ff0055; text-shadow: 0 0 10px #ff0055, 0 0 20px #ff0055; }
             25% { color: #00ffcc; text-shadow: 0 0 10px #00ffcc, 0 0 20px #00ffcc; }
@@ -61,6 +76,13 @@
 
     <div id="info">PITEK NGLAYAP</div>
     <div id="sub-info">Tekan SPASI atau Ketuk Layar untuk Melompat</div>
+    
+    <div id="logo-container">
+        <img src="logo1.png.jpeg" alt="Logo 1" class="game-logo">
+        <img src="logo2.png.jpeg" alt="Logo 2" class="game-logo">
+        <img src="logo3.png.jpeg" alt="Logo 3" class="game-logo">
+    </div>
+
     <canvas id="gameCanvas" width="800" height="400"></canvas>
 
     <script>
